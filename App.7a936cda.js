@@ -47595,7 +47595,7 @@ function _bet(nameOption) {
 
 function _beat(betId, chose) {
   return __awaiter(this, void 0, Promise, function () {
-    var contract, selected, selectedAddress;
+    var contract, selected, selectedAddress, list, amount;
     return __generator(this, function (_a) {
       switch (_a.label) {
         case 0:
@@ -47614,16 +47614,23 @@ function _beat(betId, chose) {
           selectedAddress = new everscale_inpage_provider_1.Address(selected.address);
           return [4
           /*yield*/
+          , listBet()];
+
+        case 3:
+          list = _a.sent();
+          amount = new bignumber_js_1.BigNumber(list.get(betId).amount.toString());
+          return [4
+          /*yield*/
           , contract.methods.beat({
             betId: betId,
             chose: chose
           }).send({
             from: selectedAddress,
-            amount: '15000000000',
+            amount: amount.plus(1).shiftedBy(9).toString(),
             bounce: true
           })];
 
-        case 3:
+        case 4:
           _a.sent();
 
           return [2
