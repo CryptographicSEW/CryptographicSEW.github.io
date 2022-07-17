@@ -47223,7 +47223,9 @@ var __importStar = this && this.__importStar || function (mod) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.loginModalHide = exports.avatarsRender = exports.dicebear = void 0;
+exports.switchScreen = exports.loginModalHide = exports.avatarsRender = exports.dicebear = void 0;
+
+var browser_1 = require("../browser");
 
 function dicebear(data, algorithm) {
   if (algorithm === void 0) {
@@ -47254,7 +47256,19 @@ function loginModalHide() {
 }
 
 exports.loginModalHide = loginModalHide;
-},{"bootstrap":"../node_modules/bootstrap/dist/js/bootstrap.esm.js"}],"ui/user.ts":[function(require,module,exports) {
+
+function switchScreen(to) {
+  ['login', 'main'].forEach(function (screen) {
+    var switcher = function switcher(elem) {
+      return elem.style.display = to === screen ? 'block' : 'none';
+    };
+
+    (0, browser_1.behavior)(screen, switcher);
+  });
+}
+
+exports.switchScreen = switchScreen;
+},{"../browser":"browser.ts","bootstrap":"../node_modules/bootstrap/dist/js/bootstrap.esm.js"}],"ui/user.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -47877,31 +47891,44 @@ function checkConnect() {
           providerState = _a.sent();
           permissions = providerState.permissions;
           network = providerState.selectedConnection;
+          if (!(!contractAddress(network) || !permissions.accountInteraction)) return [3
+          /*break*/
+          , 2];
+          (0, browser_1.behavior)('connectEverWallet', function (elem) {
+            return elem.onclick = connectEverWallet;
+          });
+          (0, browser_1.behavior)('connectMetaMask', function (elem) {
+            return elem.onclick = connectMetaMask;
+          });
+          (0, ui_1.switchScreen)('login');
 
-          if (!contractAddress(network) || !permissions.accountInteraction) {
-            (0, browser_1.behavior)('connectEverWallet', function (elem) {
-              return elem.onclick = connectEverWallet;
-            });
-            (0, browser_1.behavior)('connectMetaMask', function (elem) {
-              return elem.onclick = connectMetaMask;
-            });
-            switchScreen('login');
+          connectText = function connectText(elem) {
+            var disabled = !contractAddress(network);
+            if ('disabled' in elem) elem.disabled = disabled;
+          };
 
-            connectText = function connectText(elem) {
-              var disabled = !contractAddress(network);
-              if ('disabled' in elem) elem.disabled = disabled; //elem.innerText = disabled ? `Contract not deployed into ${network}` : `Connect with ${network} for interact contract`
-            };
+          (0, browser_1.behavior)('connect', connectText);
+          return [3
+          /*break*/
+          , 4];
 
-            (0, browser_1.behavior)('connect', connectText);
-          } else {
-            switchScreen('main');
-            account = permissions.accountInteraction;
-            (0, ui_1.userRender)(account.address.toString());
-            (0, browser_1.behavior)('disconnectAction', function (elem) {
-              return elem.onclick = disconnectAction;
-            });
-          }
+        case 2:
+          (0, ui_1.switchScreen)('main');
+          account = permissions.accountInteraction;
+          (0, ui_1.userRender)(account.address.toString());
+          return [4
+          /*yield*/
+          , refresh()];
 
+        case 3:
+          _a.sent();
+
+          (0, browser_1.behavior)('disconnectAction', function (elem) {
+            return elem.onclick = disconnectAction;
+          });
+          _a.label = 4;
+
+        case 4:
           return [2
           /*return*/
           ];
@@ -47951,6 +47978,9 @@ function contractAddress(network, name) {
 function gameContract() {
   return __awaiter(this, void 0, Promise, function () {
     var providerState, address;
+
+    var _this = this;
+
     return __generator(this, function (_a) {
       switch (_a.label) {
         case 0:
@@ -47969,23 +47999,30 @@ function gameContract() {
           address = contractAddress(providerState.selectedConnection);
           GameContract = new provider.everscale.Contract(Game_abi_1.default, address);
           GameContract.waitForEvent().then(function (value) {
-            console.log(value);
+            return __awaiter(_this, void 0, void 0, function () {
+              return __generator(this, function (_a) {
+                switch (_a.label) {
+                  case 0:
+                    console.log(value);
+                    return [4
+                    /*yield*/
+                    , refresh()];
+
+                  case 1:
+                    _a.sent();
+
+                    return [2
+                    /*return*/
+                    ];
+                }
+              });
+            });
           });
           return [2
           /*return*/
           , GameContract];
       }
     });
-  });
-}
-
-function switchScreen(to) {
-  ['login', 'main'].forEach(function (screen) {
-    var switcher = function switcher(elem) {
-      return elem.style.display = to === screen ? 'block' : 'none';
-    };
-
-    (0, browser_1.behavior)(screen, switcher);
   });
 }
 
@@ -48121,38 +48158,24 @@ function mainFlow() {
   });
 }
 
-function App() {
+function refresh() {
   return __awaiter(this, void 0, void 0, function () {
     var _a;
 
     return __generator(this, function (_b) {
       switch (_b.label) {
         case 0:
-          return [4
-          /*yield*/
-          , (0, blockchain_1.detectProvider)()];
-
-        case 1:
-          provider = _b.sent();
-          console.log(provider);
-          return [4
-          /*yield*/
-          , mainFlow()];
-
-        case 2:
-          _b.sent();
-
           _a = ui_1.betListRender;
           return [4
           /*yield*/
           , listBet()];
 
-        case 3:
+        case 1:
           return [4
           /*yield*/
           , _a.apply(void 0, [_b.sent()])];
 
-        case 4:
+        case 2:
           _b.sent();
 
           (0, browser_1.action)(actionList);
@@ -48162,22 +48185,40 @@ function App() {
       }
     });
   });
-} // class NApp {
-//     constructor(readonly provider: ProviderList) {
-//     }
-//
-//     async run() {
-//         const app = new NApp(await detectProvider())
-//         return app.mainFlow()
-//     }
-//
-//     async mainFlow() {
-//         const providerState = await provider.everscale.getProviderState()
-//         await setNetworkChanged(providerState.selectedConnection)
-//         await subscribe()
-//     }
-// }
+}
 
+function App() {
+  return __awaiter(this, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4
+          /*yield*/
+          , (0, blockchain_1.detectProvider)()];
+
+        case 1:
+          provider = _a.sent();
+          return [4
+          /*yield*/
+          , mainFlow()];
+
+        case 2:
+          _a.sent();
+
+          return [4
+          /*yield*/
+          , refresh()];
+
+        case 3:
+          _a.sent();
+
+          return [2
+          /*return*/
+          ];
+      }
+    });
+  });
+}
 
 App().catch(function (error) {
   return console.error(error);
